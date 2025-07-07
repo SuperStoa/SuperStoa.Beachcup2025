@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Beachvolleycup 2025 – Vorrunde Spielbogen</title>
+  <style>
+    @media print {
+      body { background: white; }
+      .no-print { display: none; }
+      .pagebreak { page-break-before: always; }
+    }
+    body { font-family: Arial, sans-serif; margin: 20px; background: #fff; }
+    h1, h2 { color: #003366; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 30px; }
+    th, td { border: 1px solid #ccc; padding: 7px; text-align: left; font-size: 14px; }
+    th { background-color: #e0e0e0; }
+    tr:nth-child(even) { background-color: #f9f9f9; }
+    .feld1-row { background-color: #f0faff; }
+    .feld2-row { background-color: #fff0f5; }
+    .team-cell { min-width: 180px; }
+    .unterschrift { height: 40px; }
+  </style>
+</head>
+<body>
+  <h1>🏐 Beachvolleycup 2025 – Vorrunde Spielbogen</h1>
+  <p class="no-print">Tipp: Mit <b>Strg+P</b> kannst du diese Seite als PDF speichern oder ausdrucken.</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Zeit</th>
+        <th>Feld</th>
+        <th>Gruppe</th>
+        <th class="team-cell">Team A</th>
+        <th>Satz 1</th>
+        <th>Satz 2</th>
+        <th class="team-cell">Team B</th>
+        <th>Satz 1</th>
+        <th>Satz 2</th>
+        <th>Schiedsrichter</th>
+        <th>Unterschrift</th>
+      </tr>
+    </thead>
+    <tbody id="spielplan-body"></tbody>
+  </table>
+  <script>
+    // Teams und Gruppen
+    const alleTeams = [
+      'Dreamteam11', 'Oaschlecker – Traunreut', 'Beachbuddies – unbekannt – Wolfgang Lisowski',
+      'SuperSTOAS 3', 'Unschlagbar 12', 'Geile Reichenhaller – TSV Bad Reichenhall',
+      'SuperSTOAS 1', 'Ein Team von Martin Schneider – Traunreut', 'Mila Superstar – TSV Palling',
+      'Meine Volksbank-Raiffeisenbank eG', 'Leider geil – TSV Traunwalchen', 'SuperSTOAS 2'
+    ];
+    const gruppeA = alleTeams.slice(0, 6);
+    const gruppeB = alleTeams.slice(6);
+
+    function kombiniere(teams, gruppe) {
+      const spiele = [];
+      for (let i = 0; i < teams.length; i++) {
+        for (let j = i + 1; j < teams.length; j++) {
+          spiele.push({ teamA: teams[i], teamB: teams[j], gruppe });
+        }
+      }
+      return spiele;
+    }
+
+    const spieleA = kombiniere(gruppeA, 'A');
+    const spieleB = kombiniere(gruppeB, 'B');
+    const belegung = [];
+    const zeiten = Array.from({ length: 30 }, (_, i) => new Date(2025, 6, 3, 10, i * 15).toTimeString().slice(0, 5));
+    const letzteEinsätze = {}; alleTeams.forEach(t => letzteEinsätze[t] = -99);
+    const queueA = [...spieleA];
+    const queueB = [...spieleB];
+
+    for (let zi = 0; zi < zeiten.length; zi++) {
+      const feldA = zi % 2 === 0 ? 'Feld 1 (Sand)' : 'Feld 2 (Rasen)';
+      const feldB = zi % 2 === 0 ? 'Feld 2 (Rasen)' : 'Feld 1 (Sand)';
+      const zeit = zeiten[zi];
+
+      function nimmSpiel(queue, gruppe) {
+        for (let i = 0; i < queue.length; i++) {
+          const s = queue[i];
+          if (zi - letzteEinsätze[s.teamA] >= 2 && zi - letzteEinsätze[s.teamB] >= 2) {
+            queue.splice(i, 1);
+            letzteEinsätze[s.teamA] = zi;
+            letzteEinsätze[s.teamB] = zi;
+            const schiri = (gruppe === 'A' ? gruppeA : gruppeB).find(t => t !== s.teamA && t !== s.teamB && letzteEinsätze[t] < zi - 1) || '';
+            return { ...s, zeit, feld: gruppe === 'A' ? feldA : feldB, schiri };
+          }
+        }
+        return null;
+      }
+
+      const sA = nimmSpiel(queueA, 'A');
+      const sB = nimmSpiel(queueB, 'B');
+      if (sA) belegung.push(sA);
+      if (sB) belegung.push(sB);
+    }
+
+    const tbody = document.getElementById('spielplan-body');
+    belegung.forEach((spiel, i) => {
+      const tr = document.createElement('tr');
+      tr.className = spiel.feld.includes('Feld 1') ? 'feld1-row' : 'feld2-row';
+      tr.innerHTML = `
+        <td>${spiel.zeit}</td>
+        <td>${spiel.feld}</td>
+        <td>${spiel.gruppe}</td>
+        <td class="team-cell">${spiel.teamA}</td>
+        <td></td>
+        <td></td>
+        <td class="team-cell">${spiel.teamB}</td>
+        <td></td>
+        <td></td>
+        <td>${spiel.schiri}</td>
+        <td class="unterschrift"></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  </script>
+</body>
+</html>

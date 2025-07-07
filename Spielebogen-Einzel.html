@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Beachvolleycup 2025 – Einzel-Spielbogen Vorrunde</title>
+  <style>
+    @media print {
+      .pagebreak { page-break-before: always; }
+      body { background: white; }
+    }
+    body { font-family: Arial, sans-serif; margin: 0; background: #fff; }
+    .spielbogen {
+      width: 98vw; max-width: 750px; margin: 0 auto 30px auto;
+      border: 2px solid #003366; border-radius: 10px; padding: 24px 28px 20px 28px;
+      background: #f9f9ff;
+    }
+    h2 { color: #003366; margin-top: 0; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 18px; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; font-size: 16px; }
+    th { background-color: #e0e0e0; }
+    .feld { font-weight: bold; color: #003366; }
+    .unterschriftfeld { height: 40px; }
+    .info { font-size: 13px; color: #003366; margin-bottom: 8px; }
+    .big { font-size: 22px; font-weight: bold; letter-spacing: 2px; }
+  </style>
+</head>
+<body>
+  <script>
+    // Teams und Gruppen
+    const alleTeams = [
+      'Dreamteam11', 'Oaschlecker – Traunreut', 'Beachbuddies – unbekannt – Wolfgang Lisowski',
+      'SuperSTOAS 3', 'Unschlagbar 12', 'Geile Reichenhaller – TSV Bad Reichenhall',
+      'SuperSTOAS 1', 'Ein Team von Martin Schneider – Traunreut', 'Mila Superstar – TSV Palling',
+      'Meine Volksbank-Raiffeisenbank eG', 'Leider geil – TSV Traunwalchen', 'SuperSTOAS 2'
+    ];
+    const gruppeA = alleTeams.slice(0, 6);
+    const gruppeB = alleTeams.slice(6);
+
+    function kombiniere(teams, gruppe) {
+      const spiele = [];
+      for (let i = 0; i < teams.length; i++) {
+        for (let j = i + 1; j < teams.length; j++) {
+          spiele.push({ teamA: teams[i], teamB: teams[j], gruppe });
+        }
+      }
+      return spiele;
+    }
+
+    const spieleA = kombiniere(gruppeA, 'A');
+    const spieleB = kombiniere(gruppeB, 'B');
+    const belegung = [];
+    const zeiten = Array.from({ length: 30 }, (_, i) => new Date(2025, 6, 3, 10, i * 15).toTimeString().slice(0, 5));
+    const letzteEinsätze = {}; alleTeams.forEach(t => letzteEinsätze[t] = -99);
+    const queueA = [...spieleA];
+    const queueB = [...spieleB];
+
+    for (let zi = 0; zi < zeiten.length; zi++) {
+      const feldA = zi % 2 === 0 ? 'Feld 1 (Sand)' : 'Feld 2 (Rasen)';
+      const feldB = zi % 2 === 0 ? 'Feld 2 (Rasen)' : 'Feld 1 (Sand)';
+      const zeit = zeiten[zi];
+
+      function nimmSpiel(queue, gruppe) {
+        for (let i = 0; i < queue.length; i++) {
+          const s = queue[i];
+          if (zi - letzteEinsätze[s.teamA] >= 2 && zi - letzteEinsätze[s.teamB] >= 2) {
+            queue.splice(i, 1);
+            letzteEinsätze[s.teamA] = zi;
+            letzteEinsätze[s.teamB] = zi;
+            const schiri = (gruppe === 'A' ? gruppeA : gruppeB).find(t => t !== s.teamA && t !== s.teamB && letzteEinsätze[t] < zi - 1) || '';
+            return { ...s, zeit, feld: gruppe === 'A' ? feldA : feldB, schiri };
+          }
+        }
+        return null;
+      }
+
+      const sA = nimmSpiel(queueA, 'A');
+      const sB = nimmSpiel(queueB, 'B');
+      if (sA) belegung.push(sA);
+      if (sB) belegung.push(sB);
+    }
+
+    // Für jede Begegnung ein eigenes Blatt erzeugen
+    belegung.forEach((spiel, i) => {
+      document.write(`
+        <div class="spielbogen${i>0?' pagebreak':''}">
+          <div class="big">Beachvolleycup 2025 – Vorrunde</div>
+          <div class="info">Gruppe: ${spiel.gruppe} &nbsp; | &nbsp; Zeit: ${spiel.zeit} &nbsp; | &nbsp; Feld: <span class="feld">${spiel.feld}</span></div>
+          <table>
+            <tr>
+              <th style="width:28%;">Team A</th>
+              <th style="width:11%;">Satz 1</th>
+              <th style="width:11%;">Satz 2</th>
+              <th style="width:28%;">Team B</th>
+              <th style="width:11%;">Satz 1</th>
+              <th style="width:11%;">Satz 2</th>
+            </tr>
+            <tr>
+              <td>${spiel.teamA}</td>
+              <td></td>
+              <td></td>
+              <td>${spiel.teamB}</td>
+              <td></td>
+              <td></td>
+            </tr>
+          </table>
+          <div class="info">Schiedsrichter: <span style="font-weight:bold;">${spiel.schiri || "_____________________"}</span></div>
+          <table>
+            <tr>
+              <th style="width:50%;">Unterschrift Team A</th>
+              <th style="width:50%;">Unterschrift Team B</th>
+            </tr>
+            <tr>
+              <td class="unterschriftfeld"></td>
+              <td class="unterschriftfeld"></td>
+            </tr>
+          </table>
+        </div>
+      `);
+    });
+  </script>
+</body>
+</html>
+
